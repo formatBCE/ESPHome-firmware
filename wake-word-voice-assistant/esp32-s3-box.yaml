@@ -3,12 +3,12 @@ substitutions:
   name: esp32-s3-box
   friendly_name: ESP32 S3 Box
   loading_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/loading_320_240.png
-  idle_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/idle_320_240.png
   listening_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/listening_320_240.png
   thinking_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/thinking_320_240.png
   replying_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/replying_320_240.png
   error_illustration_file: https://github.com/esphome/firmware/raw/main/voice-assistant/casita/error_320_240.png
 
+  clock_font_color: "#AA6600"
   loading_illustration_background_color: "000000"
   idle_illustration_background_color: "000000"
   listening_illustration_background_color: "FFFFFF"
@@ -411,11 +411,6 @@ image:
     resize: 320x240
     type: RGB24
     use_transparency: true
-  - file: ${idle_illustration_file}
-    id: casita_idle
-    resize: 320x240
-    type: RGB24
-    use_transparency: true
   - file: ${listening_illustration_file}
     id: casita_listening
     resize: 320x240
@@ -463,6 +458,13 @@ font:
     glyphs: ${allowed_characters}
     id: font_response
     size: 15
+  - file: 
+      type: gfonts
+      family: Roboto
+      weight: 500
+    glyphs: "0123456789:"
+    id: font_large
+    size: 110
 
 text_sensor:
   - id: text_request
@@ -484,8 +486,16 @@ text_sensor:
           std::string truncated = esphome::str_truncate(name.c_str(),31);
           id(text_response).state = (truncated+"...").c_str();
         }
+  - id: text_time
+    platform: homeassistant
+    entity_id: sensor.local_clock
+    on_value:
+      then:
+        - component.update: s3_box_lcd
 
 color:
+  - id: clock_color
+    hex: ${clock_font_color}
   - id: idle_color
     hex: ${idle_illustration_background_color}
   - id: listening_color
@@ -516,7 +526,7 @@ display:
       - id: idle_page
         lambda: |-
           it.fill(id(idle_color));
-          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_idle), ImageAlign::CENTER);
+          it.printf(160, 120, id(font_large), id(clock_color), TextAlign::CENTER, "%s", id(text_time).state.c_str());
       - id: listening_page
         lambda: |-
           it.fill(id(listening_color));
